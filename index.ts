@@ -1,13 +1,76 @@
-import express from 'express'
+import { serve } from 'bun'
+import { join } from 'path'
 
-const app = express()
+serve({
+  port: 3000,
+  async fetch(req) {
+    const url = new URL(req.url)
 
-app.use(express.static('public'))
+    switch (url.pathname) {
+      case '/': {
+        const html = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <link rel="stylesheet" href="/style.css">
+          </head>
+          <body>
+              <button id="btn">Click</button>
 
-app.get('/api/cat-names', (_req, res) => {
-  res.json({ catNames: ['A cat', 'B cat', 'C cat', 'D cat', 'E cat'] })
+              <script src="/app.js"></script>
+          </body>
+          </html>
+      `
+
+        return new Response(html, {
+          headers: {
+            'Content-Type': 'text/html',
+          },
+        })
+      }
+      case '/api/cat-names': {
+        const content = await Bun.file('./public/cats.txt').text()
+        const catNames = content.split('\n')
+        const json = { catNames }
+
+        return Response.json(json)
+      }
+
+      default: {
+        return handleStaticFiles(req)
+      }
+    }
+  },
 })
 
-app.listen(3000, () => {
-  console.log(`Listening on http://localhost:3000`)
-})
+function handleStaticFiles(req: Request) {
+  const url = new URL(req.url)
+  const filePath = join(import.meta.dir, 'public', url.pathname)
+
+  try {
+    const file = Bun.file(filePath)
+
+    return new Response(file, {
+      headers: {
+        'Content-Type': getContentType(url.pathname),
+      },
+    })
+  } catch (error) {
+    return new Response('File not found', { status: 404 })
+  }
+}
+
+function getContentType(pathname: string) {
+  if (pathname.endsWith('.js')) {
+    return 'application/javascript'
+  }
+  if (pathname.endsWith('.css')) {
+    return 'text/css'
+  }
+  if (pathname.endsWith('.html')) {
+    return 'text/html'
+  }
+  return 'text/plain'
+}
+
+console.log(`Listening on http://localhost:3000`)

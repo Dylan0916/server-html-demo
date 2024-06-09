@@ -1,14 +1,11 @@
 {
   "name": "test-server",
   "module": "index.ts",
-  "type": "module",
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
-  "dependencies": {
-    "express": "^4.19.2"
-  }
+  "type": "module"
 }
